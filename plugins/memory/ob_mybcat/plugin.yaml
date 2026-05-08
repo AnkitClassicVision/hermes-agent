@@ -1,0 +1,12 @@
+name: ob_mybcat
+version: 1.0.0
+description: "OB_mybcat Agent Memory — governed work-agent continuity via Open Brain recall/writeback API."
+pip_dependencies: []
+requires_env:
+  - OB_MYBCAT_AGENT_MEMORY_URL
+  - OB_MYBCAT_AGENT_MEMORY_KEY
+  - OB_MYBCAT_AGENT_MEMORY_WORKSPACE_ID
+  - OB_MYBCAT_AGENT_MEMORY_PROJECT_ID
+hooks:
+  - prefetch
+  - on_memory_write
