@@ -74,7 +74,7 @@ Hermes gets OB_mybcat continuity through the native `MemoryProvider` hooks. Clau
 V1 scripts:
 
 ```bash
-scripts/ob-mybcat-agent-memory recall "Classic Vision Care EHR"
+scripts/ob-mybcat-agent-memory recall "example practice EHR"
 scripts/ob-mybcat-claude --task "Implement the provider smoke test" -- --model sonnet
 scripts/ob-mybcat-codex --task "Review this diff" -- --full-auto
 ```
@@ -113,7 +113,7 @@ This keeps agent guesses from becoming instruction-grade work memory without rev
 
 Do not live-enable until all are true:
 
-- SQL/RLS/grants reviewed against Ankit's OB_mybcat schemas.
+- SQL/RLS/grants reviewed against the OB_mybcat schemas.
 - Workspace/project IDs selected and smoke-tested.
 - PHI/secret scrub policy tested.
 - Review owner and retention policy defined.

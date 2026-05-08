@@ -110,7 +110,7 @@ scripts/ob-mybcat-codex --task "Review this diff" -- --full-auto
 Recall only:
 
 ```bash
-scripts/ob-mybcat-agent-memory recall "Classic Vision Care EHR" --surface claude_code
+scripts/ob-mybcat-agent-memory recall "example practice EHR" --surface claude_code
 ```
 
 Require fail-closed recall:
