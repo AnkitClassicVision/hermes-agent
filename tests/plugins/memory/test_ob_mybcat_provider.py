@@ -209,7 +209,7 @@ def test_prefetch_posts_recall_payload_and_formats_response(provider_with_client
         "memories": [
             {
                 "id": "mem-1",
-                "content": "Classic Vision Care uses EyeCloud as its EHR.",
+                "content": "Example Practice uses ExampleEHR as its EHR.",
                 "review_status": "confirmed",
                 "provenance": "user_confirmed",
                 "use_policy": {
@@ -233,12 +233,12 @@ def test_prefetch_posts_recall_payload_and_formats_response(provider_with_client
         ],
     }
 
-    context = provider.prefetch("Classic Vision Care EHR", session_id="session-1")
+    context = provider.prefetch("example practice EHR", session_id="session-1")
 
     assert fake.posts[0]["path"] == "/recall"
     payload = fake.posts[0]["payload"]
     assert payload["schema_version"] == "openbrain.agent_memory.recall.v1"
-    assert payload["query"] == "Classic Vision Care EHR"
+    assert payload["query"] == "example practice EHR"
     assert payload["workspace_id"] == "workspace-1"
     assert payload["project_id"] == "project-1"
     assert payload["session_id"] == "session-1"
@@ -248,7 +248,7 @@ def test_prefetch_posts_recall_payload_and_formats_response(provider_with_client
 
     assert "OB_mybcat Agent Memory" in context
     assert "req-123" in context
-    assert "Classic Vision Care uses EyeCloud" in context
+    assert "Example Practice uses ExampleEHR" in context
     assert "instruction" in context
     assert "pending" in context
     assert "evidence" in context

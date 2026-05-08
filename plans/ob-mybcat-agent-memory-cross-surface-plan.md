@@ -83,7 +83,7 @@ Expected before implementation: fails because module does not exist.
 
 **Usage examples:**
 ```bash
-scripts/ob-mybcat-agent-memory recall "Classic Vision Care EHR"
+scripts/ob-mybcat-agent-memory recall "example practice EHR"
 scripts/ob-mybcat-claude --task "Implement the provider smoke test" -- --max-turns 10
 scripts/ob-mybcat-codex --task "Review this diff" -- --full-auto
 ```
