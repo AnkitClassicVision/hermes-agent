@@ -330,6 +330,154 @@
   }
 
   // -------------------------------------------------------------------------
+  // Control tower overview — visual system/status summary above the board.
+  // Kept client-side so it works with old plugin_api.py responses: the board
+  // payload already contains every card needed to compute counts.
+  // -------------------------------------------------------------------------
+
+  function flattenBoardTasks(boardData) {
+    if (!boardData || !boardData.columns) return [];
+    const tasks = [];
+    for (const col of boardData.columns) {
+      for (const tk of (col.tasks || [])) {
+        tasks.push(Object.assign({ status: col.name }, tk));
+      }
+    }
+    return tasks;
+  }
+
+  function countByStatus(tasks) {
+    const out = {};
+    for (const tk of tasks) {
+      const status = tk.status || "unknown";
+      out[status] = (out[status] || 0) + 1;
+    }
+    return out;
+  }
+
+  function buildProfileOverview(tasks) {
+    const byProfile = {};
+    for (const tk of tasks) {
+      const name = tk.assignee || "(unassigned)";
+      if (!byProfile[name]) {
+        byProfile[name] = {
+          name: name, total: 0, ready: 0, running: 0, blocked: 0, done: 0, diagnostics: 0,
+        };
+      }
+      const row = byProfile[name];
+      row.total += 1;
+      if (tk.status === "ready") row.ready += 1;
+      if (tk.status === "running") row.running += 1;
+      if (tk.status === "blocked") row.blocked += 1;
+      if (tk.status === "done") row.done += 1;
+      if ((tk.diagnostics && tk.diagnostics.length > 0) || (tk.warnings && tk.warnings.count > 0)) {
+        row.diagnostics += 1;
+      }
+    }
+    return Object.keys(byProfile).map(function (k) { return byProfile[k]; })
+      .sort(function (a, b) {
+        const aHot = (a.running * 4) + (a.blocked * 3) + (a.ready * 2) + a.diagnostics;
+        const bHot = (b.running * 4) + (b.blocked * 3) + (b.ready * 2) + b.diagnostics;
+        if (aHot !== bHot) return bHot - aHot;
+        if (a.total !== b.total) return b.total - a.total;
+        return a.name.localeCompare(b.name);
+      });
+  }
+
+  function BoardOverview(props) {
+    const { t } = useI18n();
+    const visibleTasks = flattenBoardTasks(props.boardData);
+    const rawTasks = flattenBoardTasks(props.rawBoard || props.boardData);
+    const visibleCounts = countByStatus(visibleTasks);
+    const boardList = props.boardList || [];
+    const current = boardList.find(function (b) { return b.slug === props.boardSlug; });
+    const boardName = (current && current.name) || props.boardSlug || tx(t, "defaultBoard", "Default");
+    const boardIcon = (current && current.icon) || "▦";
+    const profileRows = buildProfileOverview(visibleTasks).slice(0, 6);
+    const diagnostics = visibleTasks.filter(function (tk) {
+      return (tk.diagnostics && tk.diagnostics.length > 0) || (tk.warnings && tk.warnings.count > 0);
+    }).length;
+    const openCount = visibleTasks.length - (visibleCounts.done || 0) - (visibleCounts.archived || 0);
+    const inMotion = (visibleCounts.ready || 0) + (visibleCounts.running || 0);
+    const queued = (visibleCounts.triage || 0) + (visibleCounts.todo || 0) + (visibleCounts.scheduled || 0);
+    const activeFilters = [];
+    if (props.filters) {
+      if (props.filters.search) activeFilters.push("Search: " + props.filters.search);
+      if (props.filters.tenant) activeFilters.push("Tenant: " + props.filters.tenant);
+      if (props.filters.assignee) activeFilters.push("Profile: " + props.filters.assignee);
+      if (props.filters.archived) activeFilters.push("Archived visible");
+    }
+    const statCards = [
+      { key: "open", label: tx(t, "overviewOpen", "Open"), value: openCount, tone: "sky" },
+      { key: "motion", label: tx(t, "overviewInMotion", "Ready + running"), value: inMotion, tone: "emerald" },
+      { key: "blocked", label: tx(t, "overviewBlocked", "Blocked"), value: visibleCounts.blocked || 0, tone: "amber" },
+      { key: "diagnostics", label: tx(t, "overviewDiagnostics", "Diagnostics"), value: diagnostics, tone: diagnostics ? "rose" : "slate" },
+    ];
+
+    return h("section", { className: "hermes-kanban-hero", "aria-label": "Kanban control tower overview" },
+      h("div", { className: "hermes-kanban-hero-main" },
+        h("div", { className: "hermes-kanban-hero-kicker" },
+          h("span", { className: "hermes-kanban-hero-live" }, "Live"),
+          h("span", null, tx(t, "controlTower", "Kanban control tower")),
+        ),
+        h("div", { className: "hermes-kanban-hero-title-row" },
+          h("span", { className: "hermes-kanban-hero-icon", "aria-hidden": true }, boardIcon),
+          h("div", null,
+            h("h2", { className: "hermes-kanban-hero-title" }, boardName),
+            h("div", { className: "hermes-kanban-hero-sub" },
+              rawTasks.length === visibleTasks.length
+                ? tx(t, "overviewAllTasksVisible", "{n} tasks visible", { n: visibleTasks.length })
+                : tx(t, "overviewFilteredTasks", "{visible} of {total} tasks visible",
+                    { visible: visibleTasks.length, total: rawTasks.length }),
+              queued ? " · " + queued + " queued" : "",
+            ),
+          ),
+        ),
+        h("div", { className: "hermes-kanban-hero-actions" },
+          h(Button, { onClick: props.onNudgeDispatch, size: "sm" },
+            tx(t, "nudgeDispatcher", "Nudge dispatcher")),
+          h(Button, { onClick: props.onRefresh, size: "sm" }, tx(t, "refresh", "Refresh")),
+        ),
+      ),
+      h("div", { className: "hermes-kanban-hero-stats" },
+        statCards.map(function (s) {
+          return h("div", { key: s.key, className: "hermes-kanban-stat hermes-kanban-stat--" + s.tone },
+            h("span", { className: "hermes-kanban-stat-label" }, s.label),
+            h("span", { className: "hermes-kanban-stat-value" }, String(s.value)),
+          );
+        }),
+      ),
+      h("div", { className: "hermes-kanban-profile-strip" },
+        profileRows.length === 0
+          ? h("div", { className: "hermes-kanban-profile-empty" },
+              tx(t, "overviewNoProfiles", "No assigned profiles on this board yet."))
+          : profileRows.map(function (p) {
+              return h("div", { key: p.name, className: "hermes-kanban-profile-chip" },
+                h("div", { className: "hermes-kanban-profile-chip-head" },
+                  h("span", { className: "hermes-kanban-profile-name" }, p.name),
+                  h("span", { className: "hermes-kanban-profile-total" }, p.total),
+                ),
+                h("div", { className: "hermes-kanban-profile-micro" },
+                  p.running ? h("span", { className: "hermes-kanban-profile-micro--running" }, p.running + " running") : null,
+                  p.ready ? h("span", { className: "hermes-kanban-profile-micro--ready" }, p.ready + " ready") : null,
+                  p.blocked ? h("span", { className: "hermes-kanban-profile-micro--blocked" }, p.blocked + " blocked") : null,
+                  p.diagnostics ? h("span", { className: "hermes-kanban-profile-micro--diag" }, p.diagnostics + " diag") : null,
+                ),
+              );
+            }),
+      ),
+      activeFilters.length > 0
+        ? h("div", { className: "hermes-kanban-filter-ribbon" },
+            activeFilters.map(function (f) {
+              return h("span", { key: f, className: "hermes-kanban-filter-pill" }, f);
+            }),
+          )
+        : null,
+      h("div", { className: "hermes-kanban-hero-bg", "aria-hidden": true }),
+    );
+  }
+
+  // -------------------------------------------------------------------------
   // Touch drag-drop helper.
   //
   // HTML5 DnD is desktop-only. On touch devices we attach a pointerdown
@@ -683,10 +831,10 @@
       setFailedIds(new Set());
     }, []);
     const moveSelected = useCallback(function (newStatus) {
-      const confirmMsg = DESTRUCTIVE_TRANSITIONS[newStatus];
+      const confirmMsg = getDestructiveConfirm(t, newStatus);
       if (confirmMsg && !window.confirm(confirmMsg)) return;
       if (selectedIds.size === 0) return;
-      const patch = withCompletionSummary({ status: newStatus }, selectedIds.size);
+      const patch = withCompletionSummary({ status: newStatus }, selectedIds.size, t);
       if (!patch) return;
       const ids = Array.from(selectedIds);
       // Optimistic UI: remove selected from all columns and prepend to target.
@@ -957,6 +1105,11 @@
     if (!filteredBoard) return null;
 
     const renderMd = !config || config.render_markdown !== false;
+    const nudgeDispatch = function () {
+      SDK.fetchJSON(withBoard(`${API}/dispatch?max=8`, board), { method: "POST" })
+        .then(loadBoard)
+        .catch(function (e) { setError(String(e.message || e)); });
+    };
 
     return h(ErrorBoundary, null,
       h("div", { className: "hermes-kanban flex flex-col gap-4" },
@@ -973,6 +1126,20 @@
             return createNewBoard(payload).then(function () { setShowNewBoard(false); });
           },
         }) : null,
+        h(BoardOverview, {
+          boardData: filteredBoard,
+          rawBoard: boardData,
+          boardSlug: board,
+          boardList: boardList,
+          filters: {
+            search: search,
+            tenant: tenantFilter,
+            assignee: assigneeFilter,
+            archived: includeArchived,
+          },
+          onNudgeDispatch: nudgeDispatch,
+          onRefresh: loadBoard,
+        }),
         h(OrchestrationPanel, null),
         h(AttentionStrip, {
           boardData,
@@ -985,11 +1152,7 @@
           includeArchived, setIncludeArchived,
           laneByProfile, setLaneByProfile,
           search, setSearch,
-          onNudgeDispatch: function () {
-            SDK.fetchJSON(withBoard(`${API}/dispatch?max=8`, board), { method: "POST" })
-              .then(loadBoard)
-              .catch(function (e) { setError(String(e.message || e)); });
-          },
+          onNudgeDispatch: nudgeDispatch,
           onRefresh: loadBoard,
         }),
        selectedIds.size > 0 ? h(BulkActionBar, {
