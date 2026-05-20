@@ -979,6 +979,34 @@ def test_dashboard_done_actions_prompt_for_completion_summary():
     assert "body: JSON.stringify(finalPatch)" in bundle
 
 
+def test_dashboard_control_tower_overview_and_profile_strip_present():
+    repo_root = Path(__file__).resolve().parents[2]
+    bundle = (
+        repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js"
+    ).read_text()
+    styles = (
+        repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "style.css"
+    ).read_text()
+
+    assert "function BoardOverview(props)" in bundle
+    assert "buildProfileOverview" in bundle
+    assert "hermes-kanban-hero" in bundle
+    assert "hermes-kanban-profile-strip" in bundle
+    assert "hermes-kanban-stat" in styles
+    assert "hermes-kanban-profile-chip" in styles
+
+
+def test_dashboard_bulk_drag_uses_defined_destructive_confirm_helper():
+    repo_root = Path(__file__).resolve().parents[2]
+    bundle = (
+        repo_root / "plugins" / "kanban" / "dashboard" / "dist" / "index.js"
+    ).read_text()
+
+    assert "DESTRUCTIVE_TRANSITIONS" not in bundle
+    assert "const confirmMsg = getDestructiveConfirm(t, newStatus);" in bundle
+    assert "withCompletionSummary({ status: newStatus }, selectedIds.size, t)" in bundle
+
+
 def test_dashboard_surfaces_ready_blocked_error_inline():
     """Regression for #26744: failed status transitions must be surfaced
     inline, not swallowed.  The drag/drop banner and the drawer's action
