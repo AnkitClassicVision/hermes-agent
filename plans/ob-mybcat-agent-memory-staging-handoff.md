@@ -37,25 +37,28 @@ The implementation is intentionally staging-safe:
 - `plugins/memory/ob_mybcat/plugin.yaml`
 - `plugins/memory/ob_mybcat/README.md`
 - `plugins/memory/ob_mybcat/surface_bridge.py`
+- `plugins/memory/ob_mybcat/harness_tracking.py`
 - `scripts/ob-mybcat-agent-memory`
 - `scripts/ob-mybcat-claude`
 - `scripts/ob-mybcat-codex`
+- `scripts/ob-mybcat-harness-tracking`
 - `tests/plugins/memory/test_ob_mybcat_provider.py`
 - `tests/plugins/memory/test_ob_mybcat_surface_bridge.py`
+- `tests/plugins/memory/test_ob_mybcat_harness_tracking.py`
 
 ## Verification commands run
 
 ```bash
-python -m pytest tests/plugins/memory/test_ob_mybcat_provider.py tests/plugins/memory/test_ob_mybcat_surface_bridge.py -q -o 'addopts='
-# 29 passed
+python -m pytest tests/plugins/memory/test_ob_mybcat_provider.py tests/plugins/memory/test_ob_mybcat_surface_bridge.py tests/plugins/memory/test_ob_mybcat_harness_tracking.py -q -o 'addopts='
+# 33 passed
 
-python -m pytest tests/tools/test_memory_tool.py tests/agent/test_memory_provider.py tests/run_agent/test_memory_provider_init.py tests/run_agent/test_memory_sync_interrupted.py tests/plugins/memory/test_ob_mybcat_provider.py tests/plugins/memory/test_ob_mybcat_surface_bridge.py -q -o 'addopts='
-# 141 passed
+python -m pytest tests/tools/test_memory_tool.py tests/agent/test_memory_provider.py tests/run_agent/test_memory_provider_init.py tests/run_agent/test_memory_sync_interrupted.py tests/plugins/memory/test_ob_mybcat_provider.py tests/plugins/memory/test_ob_mybcat_surface_bridge.py tests/plugins/memory/test_ob_mybcat_harness_tracking.py -q -o 'addopts='
+# 145 passed
 
 python -m pytest tests/plugins/memory -q -o 'addopts='
-# 189 passed
+# 194 passed
 
-python -m py_compile plugins/memory/ob_mybcat/__init__.py plugins/memory/ob_mybcat/surface_bridge.py tests/plugins/memory/test_ob_mybcat_provider.py tests/plugins/memory/test_ob_mybcat_surface_bridge.py
+python -m py_compile plugins/memory/ob_mybcat/__init__.py plugins/memory/ob_mybcat/surface_bridge.py plugins/memory/ob_mybcat/harness_tracking.py tests/plugins/memory/test_ob_mybcat_provider.py tests/plugins/memory/test_ob_mybcat_surface_bridge.py tests/plugins/memory/test_ob_mybcat_harness_tracking.py
 # passed
 ```
 
@@ -134,6 +137,6 @@ Do not enable for production work until these pass:
 
 ## Repo caveats
 
-At handoff time, the OB_mybcat Agent Memory files were moved into a clean worktree/branch based on latest `origin/main`. Keep unrelated local changes from the original checkout separate, including `web/package-lock.json` and founder-guided-autonomy plan/spec files.
+At PR prep time, these OB_mybcat Agent Memory files were moved into a clean worktree/branch based on latest `fork/main`. Keep unrelated local changes from the original checkout separate, including founder-guided-autonomy plan/spec files.
 
 Hermes config currently has `agent.max_turns = 1000` as a temporary project setting. Revert to the preferred complex-task baseline later if desired.
