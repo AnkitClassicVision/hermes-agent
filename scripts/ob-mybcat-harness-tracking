@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""CLI wrapper for the OB_mybcat harness tracking manifest builder."""
+
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from plugins.memory.ob_mybcat.harness_tracking import main
+
+if __name__ == "__main__":
+    raise SystemExit(main())

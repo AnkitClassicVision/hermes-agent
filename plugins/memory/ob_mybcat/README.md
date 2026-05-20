@@ -91,6 +91,23 @@ Mechanical behavior:
 
 This is still staging/pilot infrastructure. It proves mechanical injection across work surfaces; it does not prove product value until a real task shows less re-explanation or fewer context mistakes.
 
+## Harness tracking manifest
+
+The provider package also includes a staging-safe local inventory builder for the transcript/log/workflow-state map:
+
+```bash
+scripts/ob-mybcat-harness-tracking --print-payload
+```
+
+Mechanical behavior:
+
+- Catalogs Hermes, Codex, and Claude Code transcript/log/state sources.
+- Writes a JSON manifest and markdown summary under `~/.hermes/artifacts/harness-tracking/` by default.
+- Captures metadata only by default: source paths, counts, sizes, extension totals, SQLite table counts, and per-file path fingerprints for top-file summaries.
+- Does not read transcript/log bodies and does not write to OB_mybcat by itself.
+- Emits a compact OB_mybcat capture payload when `--print-payload` is used; a human/agent can submit that payload through the approved OB_mybcat capture path.
+- Optional `--include-hashes` adds file hashes for fixed file sources and metadata fingerprints for directory sources; directory mode still avoids reading every transcript body and never emits raw per-file paths.
+
 ## Safety defaults
 
 Agent-written writebacks are always sent with:
